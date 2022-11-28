@@ -59,8 +59,7 @@ services:
       - KONG_ADMIN_LISTEN=0.0.0.0:18001, 0.0.0.0:18444 ssl
     
   konga:
-    #image: pantsel/konga
-    image: konga:latest
+    image: pantsel/konga
     container_name: kong-konga
     restart: always
     ports:
