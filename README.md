@@ -1,6 +1,6 @@
 # 🎉 Docker Kong Konga
 
-Kong is a scalable, open source API Platform (also known as an API Gateway or API Middleware). Kong was originally built by Kong Inc. (formerly known as Mashape) to secure, manage, and extend over 15,000 Microservices for its API Marketplace, which generates billions of requests per month.
+Kong and Konga are open-source tools for managing and monitoring APIs. Kong is an API gateway that provides security and management features, Konga is a web-based GUI for managing Kong.
 
 ![version](https://img.shields.io/badge/version-1.0-blue)
 ![rating](https://img.shields.io/badge/rating-★★★★★-yellow)
