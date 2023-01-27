@@ -59,7 +59,7 @@ services:
       - KONG_ADMIN_LISTEN=0.0.0.0:${LISTENER_PORT}, 0.0.0.0:${LISTENERS_PORT} ssl
     
   konga:
-    image: pantsel/konga
+    image: pantsel/konga:latest
     container_name: kong-konga
     restart: always
     ports:
