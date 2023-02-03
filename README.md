@@ -6,7 +6,7 @@ Kong and Konga are open-source tools for managing and monitoring APIs. Kong is a
 ![rating](https://img.shields.io/badge/rating-★★★★★-yellow)
 ![uptime](https://img.shields.io/badge/uptime-100%25-brightgreen)
 
-### 🥈 Run
+### 🏆 Run
 
 - [http://localhost:1337/](http://localhost:1337/) username : `admin` password : `admin`
 
