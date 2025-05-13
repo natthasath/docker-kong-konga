@@ -1,84 +1,91 @@
-version: '3.9'
 services:
-  kong-database:
-    image: postgres:latest
-    container_name: kong-database
-    restart: always
-    ports:
-      - ${DB_PORT}:5432
-    networks:
-      - default
-    volumes:
-      - db:/var/lib/postgresql/data
+  postgres:
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    image: ${POSTGRES_IMAGE_NAME}:${POSTGRES_IMAGE_VERSION}
+    restart: ${RESTART_POLICY}
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASS}
-
-  kong-migrations:
-    image: kong:latest
+      - POSTGRES_DB=${POSTGRES_DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - default:/var/lib/postgresql/data
     networks:
       - default
-    depends_on:
-      - kong-database
+
+  kong_migrations:
+    container_name: ${KONG_MIGRATIONS_CONTAINER_NAME}
+    image: ${KONG_IMAGE_NAME}:${KONG_IMAGE_VERSION}
+    restart: on-failure
     environment:
       - KONG_DATABASE=postgres
-      - KONG_PG_HOST=kong-database
-      - KONG_PG_PASSWORD=${DB_PASS}
-      - KONG_CASSANDRA_CONTACT_POINTS=kong-database
-    command: kong migrations bootstrap
-    restart: on-failure
-
-  kong:
-    image: kong:latest
-    container_name: kong
-    restart: always
-    ports:
-      - ${API_PORT}:8000
-      - ${APIS_PORT}:8443
-      - ${LISTENER_PORT}:8001
-      - ${LISTENERS_PORT}:8444
-    links:
-      - kong-database:kong-database
+      - KONG_PG_HOST=postgres
+      - KONG_PG_USER=${POSTGRES_USER}
+      - KONG_PG_PASSWORD=${POSTGRES_PASSWORD}
+      - KONG_CASSANDRA_CONTACT_POINTS=postgres
     networks:
       - default
     depends_on:
-      - kong-migrations
+      - postgres
+    command: kong migrations bootstrap
+
+  kong:
+    container_name: ${KONG_CONTAINER_NAME}
+    image: ${KONG_IMAGE_NAME}:${KONG_IMAGE_VERSION}
+    restart: ${RESTART_POLICY}
     environment:
       - LC_CTYPE=en_US.UTF-8
       - LC_ALL=en_US.UTF-8
       - KONG_DATABASE=postgres
-      - KONG_PG_HOST=kong-database
-      - KONG_PG_USER=${DB_USER}
-      - KONG_PG_PASSWORD=${DB_PASS}
-      - KONG_CASSANDRA_CONTACT_POINTS=kong-database
+      - KONG_PG_HOST=postgres
+      - KONG_PG_USER=${POSTGRES_USER}
+      - KONG_PG_PASSWORD=${POSTGRES_PASSWORD}
+      - KONG_CASSANDRA_CONTACT_POINTS=postgres
       - KONG_PROXY_ACCESS_LOG=/dev/stdout
       - KONG_ADMIN_ACCESS_LOG=/dev/stdout
       - KONG_PROXY_ERROR_LOG=/dev/stderr
       - KONG_ADMIN_ERROR_LOG=/dev/stderr
-      - KONG_ADMIN_LISTEN=0.0.0.0:${LISTENER_PORT}, 0.0.0.0:${LISTENERS_PORT} ssl
-    
-  konga:
-    image: pantsel/konga:latest
-    container_name: kong-konga
-    restart: always
+      - KONG_ADMIN_LISTEN=0.0.0.0:${KONG_ADMIN_HTTP_PORT}, 0.0.0.0:${KONG_ADMIN_HTTPS_PORT} ssl
     ports:
-      - ${APP_PORT}:1337
+      - ${KONG_HTTP_PORT}:8000
+      - ${KONG_HTTPS_PORT}:8443
+      - ${KONG_ADMIN_HTTP_PORT}:8001
+      - ${KONG_ADMIN_HTTPS_PORT}:8444
+    volumes:
+      - kong_data:/usr/local/kong
     networks:
       - default
-    volumes:
-      - data:/app/kongadata
-    links:
-      - kong:kong
+    depends_on:
+      - kong_migrations
+
+  konga:
+    container_name: ${KONGA_CONTAINER_NAME}
+    image: ${KONGA_IMAGE_NAME}:${KONGA_IMAGE_VERSION}
+    restart: ${RESTART_POLICY}
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${KONGA_NODE_ENV}
+    ports:
+      - ${KONGA_HTTP_PORT}:1337
+    volumes:
+      - konga_data:/app/kongadata
+    networks:
+      - default
+    depends_on:
+      - kong
 
 networks:
   default:
+    name: ${KONG_CONTAINER_NAME}_network
     driver: bridge
 
 volumes:
-  db:
+  default:
+    name: ${POSTGRES_CONTAINER_NAME}_data
     driver: local
-  data:
+  kong_data:
+    name: ${KONG_CONTAINER_NAME}_data
+    driver: local
+  konga_data:
+    name: ${KONGA_CONTAINER_NAME}_data
     driver: local
