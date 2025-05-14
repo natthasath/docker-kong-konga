@@ -6,7 +6,7 @@ services:
     image: ${POSTGRES_IMAGE_NAME}:${POSTGRES_IMAGE_VERSION}
     restart: ${RESTART_POLICY}
     environment:
-      - POSTGRES_DB=${POSTGRES_DB_NAME}
+      - POSTGRES_DB=${POSTGRES_DATABASE}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
@@ -15,6 +15,11 @@ services:
       - default:/var/lib/postgresql/data
     networks:
       - default
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DATABASE}"]
+      interval: ${HEALTHCHECK_INTERVAL}
+      timeout: ${HEALTHCHECK_TIMEOUT}
+      retries: ${HEALTHCHECK_RETRIES}
 
   kong_migrations:
     container_name: ${KONG_MIGRATIONS_CONTAINER_NAME}
@@ -60,6 +65,11 @@ services:
       - default
     depends_on:
       - kong_migrations
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: ${HEALTHCHECK_INTERVAL}
+      timeout: ${HEALTHCHECK_TIMEOUT}
+      retries: ${HEALTHCHECK_RETRIES}
 
   konga:
     container_name: ${KONGA_CONTAINER_NAME}
@@ -67,6 +77,12 @@ services:
     restart: ${RESTART_POLICY}
     environment:
       - NODE_ENV=${KONGA_NODE_ENV}
+      - DB_ADAPTER=postgres
+      - DB_HOST=postgres
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_DATABASE=${POSTGRES_DATABASE}
+      - DB_PORT=5432
     ports:
       - ${KONGA_HTTP_PORT}:1337
     volumes:
@@ -75,6 +91,11 @@ services:
       - default
     depends_on:
       - kong
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:1337/api/health"]
+      interval: ${HEALTHCHECK_INTERVAL}
+      timeout: ${HEALTHCHECK_TIMEOUT}
+      retries: ${HEALTHCHECK_RETRIES}
 
 networks:
   default:
